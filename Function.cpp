@@ -386,3 +386,23 @@ float Clamp(float x, float a, float b) {
 	}
 	return 0;
 }
+
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	Vector3 result{};
+
+	result = Multiply(Dot(v1, Normalize(v2)), Normalize(v2));
+
+	return result;
+};
+
+Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
+	Vector3 result{};
+
+	result = Add(segment.origin, Project(Subtract(point, segment.origin), segment.diff));
+
+	result.x = Clamp(result.x, segment.origin.x, segment.origin.x + segment.diff.x);
+	result.y = Clamp(result.y, segment.origin.y, segment.origin.y + segment.diff.y);
+	result.z = Clamp(result.z, segment.origin.z, segment.origin.z + segment.diff.z);
+
+	return result;
+};
