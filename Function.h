@@ -7,21 +7,33 @@
 #include <cassert>
 #include "Novice.h"
 
+/// <summary>
+/// 球
+/// </summary>
 struct Sphere {
 	Vector3 center;
 	float radius;
 };
 
+/// <summary>
+/// 直線
+/// </summary>
 struct Line {
 	Vector3 origin;	//!< 始点
 	Vector3 diff;	//!< 終点への差分ベクトル
 };
 
+/// <summary>
+/// 半直線
+/// </summary>
 struct Ray {
 	Vector3 origin;	//!< 始点
 	Vector3 diff;	//!< 終点への差分ベクトル
 };
 
+/// <summary>
+/// 線分
+/// </summary>
 struct Segment {
 	Vector3 origin;	//!< 始点
 	Vector3 diff;	//!< 終点への差分ベクトル
@@ -98,3 +110,5 @@ float Clamp(float x, float a, float b);
 Vector3 Project(const Vector3& v1, const Vector3& v2);
 
 Vector3 ClosestPoint(const Vector3& point, const Segment& segment);
+
+bool IsCollision(const Sphere& s1, const Sphere& s2);

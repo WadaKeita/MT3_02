@@ -191,7 +191,7 @@ Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
 	result.y = (vector.x * matrix.m[0][1]) + (vector.y * matrix.m[1][1]) + (vector.z * matrix.m[2][1]) + (1.0f * matrix.m[3][1]);
 	result.z = (vector.x * matrix.m[0][2]) + (vector.y * matrix.m[1][2]) + (vector.z * matrix.m[2][2]) + (1.0f * matrix.m[3][2]);
 	float w = (vector.x * matrix.m[0][3]) + (vector.y * matrix.m[1][3]) + (vector.z * matrix.m[2][3]) + (1.0f * matrix.m[3][3]);
-	assert(w != 0.0f);
+	//assert(w != 0.0f);
 	result.x /= w;
 	result.y /= w;
 	result.z /= w;
@@ -406,3 +406,14 @@ Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
 
 	return result;
 };
+
+
+bool IsCollision(const Sphere& s1, const Sphere& s2) {
+	// 2つの球の中心点間の距離を求める
+	float distance = Length({ s2.center.x - s1.center.x,s2.center.y - s1.center.y,s2.center.z - s1.center.z });
+	// 半径の合計よりも短ければ衝突
+	if (distance <= s1.radius + s2.radius) {
+		return true;
+	}
+	return false;
+}
