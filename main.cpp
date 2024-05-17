@@ -16,7 +16,23 @@ const char kWindowTitle[] = "LD2A_02_ワダ_ケイタ";
 /// <returns></returns>
 bool IsCollision(const Segment& segment, const Plane& plane) {
 	// まずは垂直判定を行うために、法線と線の内積を求める
+	float dot = Dot(plane.normal, segment.diff);
 
+	// 垂直=平行であるので、衝突しているはずがない
+	if (dot == 0.0f) {
+		return false;
+	}
+
+	// tを求める
+	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+
+	if (t < 0) {
+		return false;
+	}
+	else if (t > 1) {
+		return false;
+	}
+	return true;
 }
 
 /// <summary>
