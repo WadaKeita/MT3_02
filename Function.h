@@ -39,6 +39,14 @@ struct Segment {
 	Vector3 diff;	//!< 終点への差分ベクトル
 };
 
+/// <summary>
+/// 平面
+/// </summary>
+struct Plane {
+	Vector3 normal;	// !< 法線
+	float distance;	// !< 距離
+};
+
 // ベクトル変換
 Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);
 
@@ -112,3 +120,22 @@ Vector3 Project(const Vector3& v1, const Vector3& v2);
 Vector3 ClosestPoint(const Vector3& point, const Segment& segment);
 
 bool IsCollision(const Sphere& s1, const Sphere& s2);
+
+/// <summary>
+/// 平面と球の衝突判定
+/// </summary>
+/// <param name="sphere">球</param>
+/// <param name="plane">平面</param>
+/// <returns></returns>
+bool IsCollision(const Sphere& sphere, const Plane& plane);
+
+Vector3 Perpendicular(const Vector3& vector);
+
+/// <summary>
+/// 平面描画
+/// </summary>
+/// <param name="plane">平面</param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewportMatrix"></param>
+/// <param name="color"></param>
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);

@@ -9,59 +9,36 @@
 const char kWindowTitle[] = "LD2A_02_ワダ_ケイタ";
 
 /// <summary>
-/// 平面
+/// 線分と平面
 /// </summary>
-struct Plane {
-	Vector3 normal;	// !< 法線
-	float distance;	// !< 距離
-};
+/// <param name="segment"></param>
+/// <param name="plane"></param>
+/// <returns></returns>
+bool IsCollision(const Segment& segment, const Plane& plane) {
+	// まずは垂直判定を行うために、法線と線の内積を求める
+
+}
 
 /// <summary>
-/// 平面と球の衝突判定
+/// 直線と平面
 /// </summary>
-/// <param name="sphere">球</param>
-/// <param name="plane">平面</param>
+/// <param name="line"></param>
+/// <param name="plane"></param>
 /// <returns></returns>
-bool IsCollision(const Sphere& sphere, const Plane& plane) {
-
-	float k = Dot(plane.normal, sphere.center) - plane.distance;
-
-	k = k < 0 ? -k : k; // kの絶対値をとる
-
-	if (k <= sphere.radius) {
-		return true;
-	}
-	return false;
-}
-
-Vector3 Perpendicular(const Vector3& vector) {
-	if (vector.x != 0.0f || vector.y != 0.0f) {
-		return{ -vector.y,vector.x,0.0f };
-	}
-	return { 0.0f,-vector.z,vector.y };
-}
-
-void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-	Vector3 center = Multiply(plane.distance, plane.normal);
-	Vector3 perpendiculars[4];
-	perpendiculars[0] = Normalize(Perpendicular(plane.normal));
-	perpendiculars[1] = { -perpendiculars[0].x,-perpendiculars[0].y,-perpendiculars[0].z };
-	perpendiculars[2] = Cross(plane.normal, perpendiculars[0]);
-	perpendiculars[3] = { -perpendiculars[2].x,-perpendiculars[2].y,-perpendiculars[2].z };
-
-	Vector3 points[4];
-	for (int32_t index = 0; index < 4; ++index) {
-		Vector3 extend = Multiply(2.0f, perpendiculars[index]);
-		Vector3 point = Add(center, extend);
-		points[index] = Transform(Transform(point, viewProjectionMatrix), viewportMatrix);
-	}
-
-	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[2].x, (int)points[2].y, color);
-	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[1].x, (int)points[1].y, color);
-	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[3].x, (int)points[3].y, color);
-	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
+bool IsCollision(const Line& line, const Plane& plane) {
 
 }
+
+/// <summary>
+/// 半直線と平面
+/// </summary>
+/// <param name="ray"></param>
+/// <param name="plane"></param>
+/// <returns></returns>
+bool IsCollision(const Ray& ray, const Plane& plane) {
+
+}
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
