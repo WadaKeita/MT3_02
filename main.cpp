@@ -9,80 +9,73 @@
 const char kWindowTitle[] = "LD2A_02_ワダ_ケイタ";
 
 /// <summary>
-/// 線分と平面
+/// 三角形
 /// </summary>
+struct Triangle {
+	Vector3 vertices[3]; //!< 頂点
+};
+
+/// <summary>
+/// 衝突判定：三角形と線
+/// </summary>
+/// <param name="triangle"></param>
 /// <param name="segment"></param>
-/// <param name="plane"></param>
 /// <returns></returns>
-bool IsCollision(const Segment& segment, const Plane& plane) {
-	// まずは垂直判定を行うために、法線と線の内積を求める
-	float dot = Dot(plane.normal, segment.diff);
+bool IsCollision(const Triangle& triangle, const Segment& segment) {
+	// 三角形の頂点から平面を求める
+	Plane plane;
+	Vector3 v1, v2;
+	v1 = Subtract(triangle.vertices[1], triangle.vertices[0]);
+	v2 = Subtract(triangle.vertices[2], triangle.vertices[1]);
 
-	// 垂直=平行であるので、衝突しているはずがない
-	if (dot == 0.0f) {
-		return false;
-	}
+	plane.normal = Normalize(Cross(v1, v2));
+	plane.distance = Dot(triangle.vertices[0], plane.normal);
 
-	// tを求める
-	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+	// 線と平面が当たっているか
+	if (IsCollision(segment, plane) == true) {
+		float dot = Dot(plane.normal, segment.diff);
+		// 垂直=平行であるので、衝突しているはずがない
+		if (dot == 0.0f) {
+			return false;
+		}
+		// tを求める
+		float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
 
-	if (t < 0) {
-		return false;
+		Vector3 point = Multiply(t, segment.diff);
+		point = Add(point, segment.origin);
+
+		Vector3 cross01 = Cross(Subtract(triangle.vertices[1], triangle.vertices[0]), Subtract(point, triangle.vertices[1]));
+		Vector3 cross12 = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(point, triangle.vertices[2]));
+		Vector3 cross20 = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(point, triangle.vertices[0]));
+
+		if (Dot(cross01, plane.normal) >= 0.0f &&
+			Dot(cross12, plane.normal) >= 0.0f &&
+			Dot(cross20, plane.normal) >= 0.0f) {
+
+			return true;
+		}
 	}
-	else if (t > 1) {
-		return false;
-	}
-	return true;
+	return false;
 }
 
 /// <summary>
-/// 直線と平面
+/// 三角形描画
 /// </summary>
-/// <param name="line"></param>
-/// <param name="plane"></param>
-/// <returns></returns>
-bool IsCollision(const Line& line, const Plane& plane) {
-	// まずは垂直判定を行うために、法線と線の内積を求める
-	float dot = Dot(plane.normal, line.diff);
+/// <param name="triangle"></param>
+/// <param name="viewProjectionMatrix"></param>
+/// <param name="viewortMatrix"></param>
+/// <param name="color"></param>
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 
-	// 垂直=平行であるので、衝突しているはずがない
-	if (dot == 0.0f) {
-		return false;
+	Vector3 points[3];
+	for (int32_t index = 0; index < 3; index++) {
+		points[index] = Transform(Transform(triangle.vertices[index], viewProjectionMatrix), viewportMatrix);
 	}
 
-	// tを求める
-	float t = (plane.distance - Dot(line.origin, plane.normal)) / dot;
-
-	if (t == 0) {
-		return false;
-	}
-	return true;
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[0].x, (int)points[0].y, color);
 }
-
-/// <summary>
-/// 半直線と平面
-/// </summary>
-/// <param name="ray"></param>
-/// <param name="plane"></param>
-/// <returns></returns>
-bool IsCollision(const Ray& ray, const Plane& plane) {
-	// まずは垂直判定を行うために、法線と線の内積を求める
-	float dot = Dot(plane.normal, ray.diff);
-
-	// 垂直=平行であるので、衝突しているはずがない
-	if (dot == 0.0f) {
-		return false;
-	}
-
-	// tを求める
-	float t = (plane.distance - Dot(ray.origin, plane.normal)) / dot;
-
-	if (t < 0) {
-		return false;
-	}
-	return true;
-}
-
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -103,7 +96,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Sphere sphere1{ { 0.0f,0.0f,0.0f },0.5f };
 
 
-	Plane plane{ {0.0f,1.0f,0.0f},1.0f };
+	//Plane plane{ {0.0f,1.0f,0.0f},1.0f };
+	Triangle triangle{
+		{
+			{1.0f,0.0f,0.0f},
+			{-1.0f,0.0f,0.0f},
+			{0.0f,1.5f,0.0f}
+		}
+	};
+
 
 	Vector3 scale{ 1.0f,1.0f,1.0f };
 	Vector3 rotate{};
@@ -171,7 +172,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 		// 当たり判定
-		if (IsCollision(segment, plane) == true) {
+		if (IsCollision(triangle, segment) == true) {
 			segment_color = RED;
 		}
 		else {
@@ -194,7 +195,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), segment_color);
 
-		DrawPlane(plane, worldViewProjectionMatrix, viewportMatrix, WHITE);
+		DrawTriangle(triangle, worldViewProjectionMatrix, viewportMatrix, WHITE);
 
 		//DrawSphere(sphere1, sphere1WorldViewProjectionMatrix, viewportMatrix, sphere1_color);
 
@@ -214,9 +215,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("segment.origin", &segment.origin.x, 0.01f);
 		ImGui::DragFloat3("segment.diff", &segment.diff.x, 0.01f);
 
-		ImGui::DragFloat3("plane.normal", &plane.normal.x, 0.01f);
-		plane.normal = Normalize(plane.normal);
-		ImGui::DragFloat("plane.distance", &plane.distance, 0.01f);
+		//ImGui::DragFloat3("plane.normal", &plane.normal.x, 0.01f);
+		//plane.normal = Normalize(plane.normal);
+		//ImGui::DragFloat("plane.distance", &plane.distance, 0.01f);
 		ImGui::End();
 
 #endif // _DEBUG

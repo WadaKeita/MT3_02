@@ -457,3 +457,61 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[3].x, (int)points[3].y, color);
 	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
 }
+
+
+bool IsCollision(const Segment& segment, const Plane& plane) {
+	// まずは垂直判定を行うために、法線と線の内積を求める
+	float dot = Dot(plane.normal, segment.diff);
+
+	// 垂直=平行であるので、衝突しているはずがない
+	if (dot == 0.0f) {
+		return false;
+	}
+
+	// tを求める
+	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+
+	if (t < 0) {
+		return false;
+	}
+	else if (t > 1) {
+		return false;
+	}
+	return true;
+}
+
+bool IsCollision(const Line& line, const Plane& plane) {
+	// まずは垂直判定を行うために、法線と線の内積を求める
+	float dot = Dot(plane.normal, line.diff);
+
+	// 垂直=平行であるので、衝突しているはずがない
+	if (dot == 0.0f) {
+		return false;
+	}
+
+	// tを求める
+	float t = (plane.distance - Dot(line.origin, plane.normal)) / dot;
+
+	if (t == 0) {
+		return false;
+	}
+	return true;
+}
+
+bool IsCollision(const Ray& ray, const Plane& plane) {
+	// まずは垂直判定を行うために、法線と線の内積を求める
+	float dot = Dot(plane.normal, ray.diff);
+
+	// 垂直=平行であるので、衝突しているはずがない
+	if (dot == 0.0f) {
+		return false;
+	}
+
+	// tを求める
+	float t = (plane.distance - Dot(ray.origin, plane.normal)) / dot;
+
+	if (t < 0) {
+		return false;
+	}
+	return true;
+}
