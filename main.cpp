@@ -33,6 +33,7 @@ bool IsCollision(const Triangle& triangle, const Segment& segment) {
 
 	// 線と平面が当たっているか
 	if (IsCollision(segment, plane) == true) {
+
 		float dot = Dot(plane.normal, segment.diff);
 		// 垂直=平行であるので、衝突しているはずがない
 		if (dot == 0.0f) {
@@ -214,6 +215,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Begin("Object");
 		ImGui::DragFloat3("segment.origin", &segment.origin.x, 0.01f);
 		ImGui::DragFloat3("segment.diff", &segment.diff.x, 0.01f);
+
+
+		ImGui::DragFloat3("triangle.vertices[0]", &triangle.vertices[0].x, 0.01f);
+		ImGui::DragFloat3("triangle.vertices[1]", &triangle.vertices[1].x, 0.01f);
+		ImGui::DragFloat3("triangle.vertices[2]", &triangle.vertices[2].x, 0.01f);
 
 		//ImGui::DragFloat3("plane.normal", &plane.normal.x, 0.01f);
 		//plane.normal = Normalize(plane.normal);
