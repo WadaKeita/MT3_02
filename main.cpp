@@ -1,6 +1,7 @@
 #include <Novice.h>
 #include "Vector3.h"
 #include "Function.h"
+#include <algorithm>
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -8,55 +9,19 @@
 
 const char kWindowTitle[] = "LD2A_02_ワダ_ケイタ";
 
-struct AABB {
-	Vector3 min; //!< 最小点
-	Vector3 max; //!< 最大点
-};
 
-/// <summary>
-/// 衝突判定：AABBとAABB
-/// </summary>
-bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
-	if ((aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) &&
-		(aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) &&
-		(aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z)) {
+bool IsCollision(const AABB& aabb, const Sphere& sphere) {
+	// 最近接点を求める
+	Vector3 closestPoint{ std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),
+		std::clamp(sphere.center.y, aabb.min.y, aabb.max.y),
+		std::clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
+	// 最近接点と球の中心との距離を求める
+	float distance = Length(Subtract(closestPoint, sphere.center));
+	// 距離が半径よりも小さければ衝突
+	if(distance <= sphere.radius){
 		return true;
 	}
 	return false;
-}
-
-void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-
-	Vector3 points[8];
-	points[0] = { aabb.min.x, aabb.min.y, aabb.min.z };
-	points[1] = { aabb.min.x, aabb.min.y, aabb.max.z };
-	points[2] = { aabb.max.x, aabb.min.y, aabb.min.z };
-	points[3] = { aabb.max.x, aabb.min.y, aabb.max.z };
-
-	points[4] = { aabb.min.x, aabb.max.y, aabb.min.z };
-	points[5] = { aabb.min.x, aabb.max.y, aabb.max.z };
-	points[6] = { aabb.max.x, aabb.max.y, aabb.min.z };
-	points[7] = { aabb.max.x, aabb.max.y, aabb.max.z };
-
-	for (int32_t index = 0; index < 8; index++) {
-		points[index] = Transform(Transform(points[index], viewProjectionMatrix), viewportMatrix);
-	}
-
-	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[1].x, (int)points[1].y, color);
-	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[2].x, (int)points[2].y, color);
-	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[4].x, (int)points[4].y, color);
-
-	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[2].x, (int)points[2].y, color);
-	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[4].x, (int)points[4].y, color);
-	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[7].x, (int)points[7].y, color);
-
-	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[1].x, (int)points[1].y, color);
-	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[4].x, (int)points[4].y, color);
-	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[7].x, (int)points[7].y, color);
-
-	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[1].x, (int)points[1].y, color);
-	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[2].x, (int)points[2].y, color);
-	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[7].x, (int)points[7].y, color);
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -72,18 +37,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
+	Sphere sphere;
+	sphere.center = { 1.0f,1.0f,1.0f };
+	sphere.radius = 0.5f;
+
 	AABB aabb1{
 		.min{ -0.5f, -0.5f, -0.5f },
-		.max{ 0.0f, 0.0f, 0.0f },
-	};
-	AABB aabb2{
-		.min{ 0.2f, 0.2f, 0.2f },
-		.max{ 1.0f, 1.0f, 1.0f },
+		.max{ 0.5f, 0.5f, 0.5f },
 	};
 
 	int aabb1_color = WHITE;
-	int aabb2_color = WHITE;
-
+	int sphere_color = WHITE;
 
 	Vector3 scale{ 1.0f,1.0f,1.0f };
 	Vector3 rotate{};
@@ -138,7 +102,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		Matrix4x4 worldMatrix = MakeAffineMatrix(scale, rotate, translate);
-		//Matrix4x4 sphere1WorldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, sphere1.center);
+		Matrix4x4 sphere1WorldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, sphere.center);
 
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraScale, cameraRotation, cameraTranslate);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -147,11 +111,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
 
-		//Matrix4x4 sphere1WorldViewProjectionMatrix = Multiply(sphere1WorldMatrix, Multiply(viewMatrix, projectionMatrix));
+		Matrix4x4 sphere1WorldViewProjectionMatrix = Multiply(sphere1WorldMatrix, Multiply(viewMatrix, projectionMatrix));
 
 
 		// 当たり判定
-		if (IsCollision(aabb1, aabb2) == true) {
+		if (IsCollision(aabb1, sphere) == true) {
 			aabb1_color = RED;
 		}
 		else {
@@ -170,7 +134,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(worldViewProjectionMatrix, viewportMatrix);
 
 		DrawAABB(aabb1, worldViewProjectionMatrix, viewportMatrix, aabb1_color);
-		DrawAABB(aabb2, worldViewProjectionMatrix, viewportMatrix, aabb2_color);
+		DrawSphere(sphere, sphere1WorldViewProjectionMatrix, viewportMatrix, sphere_color);
 
 #ifdef _DEBUG
 
@@ -185,6 +149,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::End();
 
 		ImGui::Begin("Object");
+
+		ImGui::DragFloat3("sphere.center", &sphere.center.x, 0.01f);
+		ImGui::DragFloat("sphere.radius", &sphere.radius, 0.01f);
+
 		ImGui::DragFloat3("aabb1.max", &aabb1.max.x, 0.01f);
 		ImGui::DragFloat3("aabb1.min", &aabb1.min.x, 0.01f);
 		aabb1.min.x = (std::min)(aabb1.min.x, aabb1.max.x);
@@ -194,14 +162,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		aabb1.min.z = (std::min)(aabb1.min.z, aabb1.max.z);
 		aabb1.max.z = (std::max)(aabb1.min.z, aabb1.max.z);
 
-		ImGui::DragFloat3("aabb2.max", &aabb2.max.x, 0.01f);
-		ImGui::DragFloat3("aabb2.min", &aabb2.min.x, 0.01f);
-		aabb2.min.x = (std::min)(aabb2.min.x, aabb2.max.x);
-		aabb2.max.x = (std::max)(aabb2.min.x, aabb2.max.x);
-		aabb2.min.y = (std::min)(aabb2.min.y, aabb2.max.y);
-		aabb2.max.y = (std::max)(aabb2.min.y, aabb2.max.y);
-		aabb2.min.z = (std::min)(aabb2.min.z, aabb2.max.z);
-		aabb2.max.z = (std::max)(aabb2.min.z, aabb2.max.z);
 		ImGui::End();
 
 #endif // _DEBUG

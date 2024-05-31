@@ -54,6 +54,11 @@ struct Triangle {
 	Vector3 vertices[3]; //!< 頂点
 };
 
+struct AABB {
+	Vector3 min; //!< 最小点
+	Vector3 max; //!< 最大点
+};
+
 // ベクトル変換
 Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);
 
@@ -119,11 +124,6 @@ Matrix4x4 Inverse(const Matrix4x4& m);
 /// </summary>
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
-/// <summary>
-/// 球描画
-/// </summary>
-void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
-
 float Clamp(float x, float a, float b);
 
 /// <summary>
@@ -137,6 +137,28 @@ Vector3 Project(const Vector3& v1, const Vector3& v2);
 Vector3 ClosestPoint(const Vector3& point, const Segment& segment);
 
 /// <summary>
+/// 球描画
+/// </summary>
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+/// <summary>
+/// 平面描画
+/// </summary>
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+Vector3 Perpendicular(const Vector3& vector);
+
+/// <summary>
+/// 三角形描画
+/// </summary>
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+/// <summary>
+/// AABB描画
+/// </summary>
+void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+/// <summary>
 /// 衝突判定：球と球
 /// </summary>
 bool IsCollision(const Sphere& s1, const Sphere& s2);
@@ -146,20 +168,13 @@ bool IsCollision(const Sphere& s1, const Sphere& s2);
 /// </summary>
 bool IsCollision(const Sphere& sphere, const Plane& plane);
 
-Vector3 Perpendicular(const Vector3& vector);
-
-/// <summary>
-/// 平面描画
-/// </summary>
-void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
-
 /// <summary>
 /// 衝突判定：線分と平面
 /// </summary>
 bool IsCollision(const Segment& segment, const Plane& plane);
 
 /// <summary>
-/// 直線と平面
+/// 衝突判定：直線と平面
 /// </summary>
 bool IsCollision(const Line& line, const Plane& plane);
 
@@ -174,6 +189,6 @@ bool IsCollision(const Ray& ray, const Plane& plane);
 bool IsCollision(const Triangle& triangle, const Segment& segment);
 
 /// <summary>
-/// 三角形描画
+/// 衝突判定：AABBとAABB
 /// </summary>
-void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+bool IsCollision(const AABB& aabb1, const AABB& aabb2);

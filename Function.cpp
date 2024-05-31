@@ -461,8 +461,67 @@ void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatri
 	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[0].x, (int)points[0].y, color);
 }
 
+// AABB描画
+void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+	Vector3 points[8];
+	points[0] = { aabb.min.x, aabb.min.y, aabb.min.z };
+	points[1] = { aabb.min.x, aabb.min.y, aabb.max.z };
+	points[2] = { aabb.max.x, aabb.min.y, aabb.min.z };
+	points[3] = { aabb.max.x, aabb.min.y, aabb.max.z };
+
+	points[4] = { aabb.min.x, aabb.max.y, aabb.min.z };
+	points[5] = { aabb.min.x, aabb.max.y, aabb.max.z };
+	points[6] = { aabb.max.x, aabb.max.y, aabb.min.z };
+	points[7] = { aabb.max.x, aabb.max.y, aabb.max.z };
+
+	for (int32_t index = 0; index < 8; index++) {
+		points[index] = Transform(Transform(points[index], viewProjectionMatrix), viewportMatrix);
+	}
+
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[4].x, (int)points[4].y, color);
+
+	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[4].x, (int)points[4].y, color);
+	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[7].x, (int)points[7].y, color);
+
+	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[4].x, (int)points[4].y, color);
+	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[7].x, (int)points[7].y, color);
+
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[7].x, (int)points[7].y, color);
+}
+
 
 /// -^-^- 衝突判定 -^-^- ///
+
+// 衝突判定：球と球
+bool IsCollision(const Sphere& s1, const Sphere& s2) {
+	// 2つの球の中心点間の距離を求める
+	float distance = Length({ s2.center.x - s1.center.x,s2.center.y - s1.center.y,s2.center.z - s1.center.z });
+	// 半径の合計よりも短ければ衝突
+	if (distance <= s1.radius + s2.radius) {
+		return true;
+	}
+	return false;
+}
+
+// 衝突判定：平面と球
+bool IsCollision(const Sphere& sphere, const Plane& plane) {
+
+	float k = Dot(plane.normal, sphere.center) - plane.distance;
+
+	k = k < 0 ? -k : k; // kの絶対値をとる
+
+	if (k <= sphere.radius) {
+		return true;
+	}
+	return false;
+}
 
 // 衝突判定：線分と平面
 bool IsCollision(const Segment& segment, const Plane& plane) {
@@ -563,25 +622,11 @@ bool IsCollision(const Triangle& triangle, const Segment& segment) {
 	return false;
 }
 
-// 衝突判定：球と球
-bool IsCollision(const Sphere& s1, const Sphere& s2) {
-	// 2つの球の中心点間の距離を求める
-	float distance = Length({ s2.center.x - s1.center.x,s2.center.y - s1.center.y,s2.center.z - s1.center.z });
-	// 半径の合計よりも短ければ衝突
-	if (distance <= s1.radius + s2.radius) {
-		return true;
-	}
-	return false;
-}
-
-// 衝突判定：平面と球
-bool IsCollision(const Sphere& sphere, const Plane& plane) {
-
-	float k = Dot(plane.normal, sphere.center) - plane.distance;
-
-	k = k < 0 ? -k : k; // kの絶対値をとる
-
-	if (k <= sphere.radius) {
+// 衝突判定：AABBとAABB
+bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
+	if ((aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) &&
+		(aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) &&
+		(aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z)) {
 		return true;
 	}
 	return false;
