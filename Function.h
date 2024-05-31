@@ -47,6 +47,13 @@ struct Plane {
 	float distance;	// !< 距離
 };
 
+/// <summary>
+/// 三角形
+/// </summary>
+struct Triangle {
+	Vector3 vertices[3]; //!< 頂点
+};
+
 // ベクトル変換
 Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);
 
@@ -110,17 +117,11 @@ Matrix4x4 Inverse(const Matrix4x4& m);
 /// <summary>
 /// グリッド描画
 /// </summary>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
 /// <summary>
 /// 球描画
 /// </summary>
-/// <param name="sphere"></param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
-/// <param name="color"></param>
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 float Clamp(float x, float a, float b);
@@ -128,33 +129,21 @@ float Clamp(float x, float a, float b);
 /// <summary>
 /// 正射影ベクトル
 /// </summary>
-/// <param name="v1"></param>
-/// <param name="v2"></param>
-/// <returns></returns>
 Vector3 Project(const Vector3& v1, const Vector3& v2);
 
 /// <summary>
 /// 最近接点
 /// </summary>
-/// <param name="point"></param>
-/// <param name="segment"></param>
-/// <returns></returns>
 Vector3 ClosestPoint(const Vector3& point, const Segment& segment);
 
 /// <summary>
 /// 衝突判定：球と球
 /// </summary>
-/// <param name="s1"></param>
-/// <param name="s2"></param>
-/// <returns></returns>
 bool IsCollision(const Sphere& s1, const Sphere& s2);
 
 /// <summary>
 /// 衝突判定：平面と球
 /// </summary>
-/// <param name="sphere">球</param>
-/// <param name="plane">平面</param>
-/// <returns></returns>
 bool IsCollision(const Sphere& sphere, const Plane& plane);
 
 Vector3 Perpendicular(const Vector3& vector);
@@ -162,33 +151,29 @@ Vector3 Perpendicular(const Vector3& vector);
 /// <summary>
 /// 平面描画
 /// </summary>
-/// <param name="plane">平面</param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewportMatrix"></param>
-/// <param name="color"></param>
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
-
 
 /// <summary>
 /// 衝突判定：線分と平面
 /// </summary>
-/// <param name="segment"></param>
-/// <param name="plane"></param>
-/// <returns></returns>
 bool IsCollision(const Segment& segment, const Plane& plane);
 
 /// <summary>
 /// 直線と平面
 /// </summary>
-/// <param name="line"></param>
-/// <param name="plane"></param>
-/// <returns></returns>
 bool IsCollision(const Line& line, const Plane& plane);
 
 /// <summary>
 /// 衝突判定：半直線と平面
 /// </summary>
-/// <param name="ray"></param>
-/// <param name="plane"></param>
-/// <returns></returns>
 bool IsCollision(const Ray& ray, const Plane& plane);
+
+/// <summary>
+/// 衝突判定：三角形と線
+/// </summary>
+bool IsCollision(const Triangle& triangle, const Segment& segment);
+
+/// <summary>
+/// 三角形描画
+/// </summary>
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);

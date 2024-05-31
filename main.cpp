@@ -8,74 +8,55 @@
 
 const char kWindowTitle[] = "LD2A_02_ワダ_ケイタ";
 
-/// <summary>
-/// 三角形
-/// </summary>
-struct Triangle {
-	Vector3 vertices[3]; //!< 頂点
+struct AABB {
+	Vector3 min; //!< 最小点
+	Vector3 max; //!< 最大点
 };
 
 /// <summary>
-/// 衝突判定：三角形と線
+/// 衝突判定：AABBとAABB
 /// </summary>
-/// <param name="triangle"></param>
-/// <param name="segment"></param>
-/// <returns></returns>
-bool IsCollision(const Triangle& triangle, const Segment& segment) {
-	// 三角形の頂点から平面を求める
-	Plane plane;
-	Vector3 v1, v2;
-	v1 = Subtract(triangle.vertices[1], triangle.vertices[0]);
-	v2 = Subtract(triangle.vertices[2], triangle.vertices[1]);
-
-	plane.normal = Normalize(Cross(v1, v2));
-	plane.distance = Dot(triangle.vertices[0], plane.normal);
-
-	// 線と平面が当たっているか
-	if (IsCollision(segment, plane) == true) {
-
-		float dot = Dot(plane.normal, segment.diff);
-		// 垂直=平行であるので、衝突しているはずがない
-		if (dot == 0.0f) {
-			return false;
-		}
-		// tを求める
-		float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
-
-		Vector3 point = Multiply(t, segment.diff);
-		point = Add(point, segment.origin);
-
-		Vector3 cross01 = Cross(Subtract(triangle.vertices[1], triangle.vertices[0]), Subtract(point, triangle.vertices[1]));
-		Vector3 cross12 = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(point, triangle.vertices[2]));
-		Vector3 cross20 = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(point, triangle.vertices[0]));
-
-		if (Dot(cross01, plane.normal) >= 0.0f &&
-			Dot(cross12, plane.normal) >= 0.0f &&
-			Dot(cross20, plane.normal) >= 0.0f) {
-
-			return true;
-		}
+bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
+	if ((aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) &&
+		(aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) &&
+		(aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z)) {
+		return true;
 	}
 	return false;
 }
 
-/// <summary>
-/// 三角形描画
-/// </summary>
-/// <param name="triangle"></param>
-/// <param name="viewProjectionMatrix"></param>
-/// <param name="viewortMatrix"></param>
-/// <param name="color"></param>
-void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 
-	Vector3 points[3];
-	for (int32_t index = 0; index < 3; index++) {
-		points[index] = Transform(Transform(triangle.vertices[index], viewProjectionMatrix), viewportMatrix);
+	Vector3 points[8];
+	points[0] = { aabb.min.x, aabb.min.y, aabb.min.z };
+	points[1] = { aabb.min.x, aabb.min.y, aabb.max.z };
+	points[2] = { aabb.max.x, aabb.min.y, aabb.min.z };
+	points[3] = { aabb.max.x, aabb.min.y, aabb.max.z };
+
+	points[4] = { aabb.min.x, aabb.max.y, aabb.min.z };
+	points[5] = { aabb.min.x, aabb.max.y, aabb.max.z };
+	points[6] = { aabb.max.x, aabb.max.y, aabb.min.z };
+	points[7] = { aabb.max.x, aabb.max.y, aabb.max.z };
+
+	for (int32_t index = 0; index < 8; index++) {
+		points[index] = Transform(Transform(points[index], viewProjectionMatrix), viewportMatrix);
 	}
 
 	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[1].x, (int)points[1].y, color);
-	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[2].x, (int)points[2].y, color);
-	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[0].x, (int)points[0].y, color);
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[4].x, (int)points[4].y, color);
+
+	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[4].x, (int)points[4].y, color);
+	Novice::DrawLine((int)points[6].x, (int)points[6].y, (int)points[7].x, (int)points[7].y, color);
+
+	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[4].x, (int)points[4].y, color);
+	Novice::DrawLine((int)points[5].x, (int)points[5].y, (int)points[7].x, (int)points[7].y, color);
+
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[7].x, (int)points[7].y, color);
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -91,20 +72,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
-
-	Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
-	int segment_color = WHITE;
-	//Sphere sphere1{ { 0.0f,0.0f,0.0f },0.5f };
-
-
-	//Plane plane{ {0.0f,1.0f,0.0f},1.0f };
-	Triangle triangle{
-		{
-			{1.0f,0.0f,0.0f},
-			{-1.0f,0.0f,0.0f},
-			{0.0f,1.5f,0.0f}
-		}
+	AABB aabb1{
+		.min{ -0.5f, -0.5f, -0.5f },
+		.max{ 0.0f, 0.0f, 0.0f },
 	};
+	AABB aabb2{
+		.min{ 0.2f, 0.2f, 0.2f },
+		.max{ 1.0f, 1.0f, 1.0f },
+	};
+
+	int aabb1_color = WHITE;
+	int aabb2_color = WHITE;
 
 
 	Vector3 scale{ 1.0f,1.0f,1.0f };
@@ -173,16 +151,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 		// 当たり判定
-		if (IsCollision(triangle, segment) == true) {
-			segment_color = RED;
+		if (IsCollision(aabb1, aabb2) == true) {
+			aabb1_color = RED;
 		}
 		else {
-			segment_color = WHITE;
+			aabb1_color = WHITE;
 		}
 
-
-		Vector3 start = Transform(Transform(segment.origin, worldViewProjectionMatrix), viewportMatrix);
-		Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), worldViewProjectionMatrix), viewportMatrix);
 
 		///
 		/// ↑更新処理ここまで
@@ -194,11 +169,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(worldViewProjectionMatrix, viewportMatrix);
 
-		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), segment_color);
-
-		DrawTriangle(triangle, worldViewProjectionMatrix, viewportMatrix, WHITE);
-
-		//DrawSphere(sphere1, sphere1WorldViewProjectionMatrix, viewportMatrix, sphere1_color);
+		DrawAABB(aabb1, worldViewProjectionMatrix, viewportMatrix, aabb1_color);
+		DrawAABB(aabb2, worldViewProjectionMatrix, viewportMatrix, aabb2_color);
 
 #ifdef _DEBUG
 
@@ -213,17 +185,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::End();
 
 		ImGui::Begin("Object");
-		ImGui::DragFloat3("segment.origin", &segment.origin.x, 0.01f);
-		ImGui::DragFloat3("segment.diff", &segment.diff.x, 0.01f);
+		ImGui::DragFloat3("aabb1.max", &aabb1.max.x, 0.01f);
+		ImGui::DragFloat3("aabb1.min", &aabb1.min.x, 0.01f);
+		aabb1.min.x = (std::min)(aabb1.min.x, aabb1.max.x);
+		aabb1.max.x = (std::max)(aabb1.min.x, aabb1.max.x);
+		aabb1.min.y = (std::min)(aabb1.min.y, aabb1.max.y);
+		aabb1.max.y = (std::max)(aabb1.min.y, aabb1.max.y);
+		aabb1.min.z = (std::min)(aabb1.min.z, aabb1.max.z);
+		aabb1.max.z = (std::max)(aabb1.min.z, aabb1.max.z);
 
-
-		ImGui::DragFloat3("triangle.vertices[0]", &triangle.vertices[0].x, 0.01f);
-		ImGui::DragFloat3("triangle.vertices[1]", &triangle.vertices[1].x, 0.01f);
-		ImGui::DragFloat3("triangle.vertices[2]", &triangle.vertices[2].x, 0.01f);
-
-		//ImGui::DragFloat3("plane.normal", &plane.normal.x, 0.01f);
-		//plane.normal = Normalize(plane.normal);
-		//ImGui::DragFloat("plane.distance", &plane.distance, 0.01f);
+		ImGui::DragFloat3("aabb2.max", &aabb2.max.x, 0.01f);
+		ImGui::DragFloat3("aabb2.min", &aabb2.min.x, 0.01f);
+		aabb2.min.x = (std::min)(aabb2.min.x, aabb2.max.x);
+		aabb2.max.x = (std::max)(aabb2.min.x, aabb2.max.x);
+		aabb2.min.y = (std::min)(aabb2.min.y, aabb2.max.y);
+		aabb2.max.y = (std::max)(aabb2.min.y, aabb2.max.y);
+		aabb2.min.z = (std::min)(aabb2.min.z, aabb2.max.z);
+		aabb2.max.z = (std::max)(aabb2.min.z, aabb2.max.z);
 		ImGui::End();
 
 #endif // _DEBUG

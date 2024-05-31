@@ -1,5 +1,31 @@
 #include "Function.h"
 
+float Clamp(float x, float a, float b) {
+	if (a < b) {
+		if (x < a) {
+			return a;
+		}
+		else if (x > b) {
+			return b;
+		}
+		else {
+			return x;
+		}
+	}
+	else if (a > b) {
+		if (x > a) {
+			return a;
+		}
+		else if (x < b) {
+			return b;
+		}
+		else {
+			return x;
+		}
+	}
+	return 0;
+}
+
 // ベクトル変換
 Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m) {
 
@@ -11,6 +37,8 @@ Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m) {
 
 	return result;
 }
+
+/// -^-^- ベクトル演算 -^-^- ///
 
 // 加算
 Vector3 Add(const Vector3& v1, const Vector3& v2) {
@@ -64,6 +92,9 @@ Vector3 Normalize(const Vector3& v) {
 
 // クロス積
 Vector3 Cross(const Vector3& v1, const Vector3& v2) { return { {v1.y * v2.z - v1.z * v2.y}, {v1.z * v2.x - v1.x * v2.z}, {v1.x * v2.y - v1.y * v2.x} }; };
+
+
+/// -^-^- 行列演算 -^-^- ///
 
 // 行列の積
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
@@ -286,6 +317,29 @@ Matrix4x4 Inverse(const Matrix4x4& m) {
 	return result;
 };
 
+// 正射影ベクトル
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	Vector3 result{};
+
+	result = Multiply(Dot(v1, Normalize(v2)), Normalize(v2));
+
+	return result;
+};
+
+// 最近接点
+Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
+	Vector3 result{};
+
+	result = Add(segment.origin, Project(Subtract(point, segment.origin), segment.diff));
+
+	result.x = Clamp(result.x, segment.origin.x, segment.origin.x + segment.diff.x);
+	result.y = Clamp(result.y, segment.origin.y, segment.origin.y + segment.diff.y);
+	result.z = Clamp(result.z, segment.origin.z, segment.origin.z + segment.diff.z);
+
+	return result;
+};
+
+// グリッド描画
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
 	const float kGridHalfWidth = 2.0f;
 	const uint32_t kSobdivision = 10;
@@ -325,6 +379,10 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 	}
 }
 
+
+/// -^-^- 描画 -^-^- ///
+
+// 球描画
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	const uint32_t kSubdivision = 10; // 分割数
 	const float kLonEvery = (2.0f * (float)M_PI) / kSubdivision; // 経度分割1つ分の角度
@@ -361,82 +419,7 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 	}
 }
 
-float Clamp(float x, float a, float b) {
-	if (a < b) {
-		if (x < a) {
-			return a;
-		}
-		else if (x > b) {
-			return b;
-		}
-		else {
-			return x;
-		}
-	}
-	else if (a > b) {
-		if (x > a) {
-			return a;
-		}
-		else if (x < b) {
-			return b;
-		}
-		else {
-			return x;
-		}
-	}
-	return 0;
-}
-
-Vector3 Project(const Vector3& v1, const Vector3& v2) {
-	Vector3 result{};
-
-	result = Multiply(Dot(v1, Normalize(v2)), Normalize(v2));
-
-	return result;
-};
-
-Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
-	Vector3 result{};
-
-	result = Add(segment.origin, Project(Subtract(point, segment.origin), segment.diff));
-
-	result.x = Clamp(result.x, segment.origin.x, segment.origin.x + segment.diff.x);
-	result.y = Clamp(result.y, segment.origin.y, segment.origin.y + segment.diff.y);
-	result.z = Clamp(result.z, segment.origin.z, segment.origin.z + segment.diff.z);
-
-	return result;
-};
-
-
-bool IsCollision(const Sphere& s1, const Sphere& s2) {
-	// 2つの球の中心点間の距離を求める
-	float distance = Length({ s2.center.x - s1.center.x,s2.center.y - s1.center.y,s2.center.z - s1.center.z });
-	// 半径の合計よりも短ければ衝突
-	if (distance <= s1.radius + s2.radius) {
-		return true;
-	}
-	return false;
-}
-
-bool IsCollision(const Sphere& sphere, const Plane& plane) {
-
-	float k = Dot(plane.normal, sphere.center) - plane.distance;
-
-	k = k < 0 ? -k : k; // kの絶対値をとる
-
-	if (k <= sphere.radius) {
-		return true;
-	}
-	return false;
-}
-
-Vector3 Perpendicular(const Vector3& vector) {
-	if (vector.x != 0.0f || vector.y != 0.0f) {
-		return{ -vector.y,vector.x,0.0f };
-	}
-	return { 0.0f,-vector.z,vector.y };
-}
-
+// 平面描画
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	Vector3 center = Multiply(plane.distance, plane.normal);
 	Vector3 perpendiculars[4];
@@ -458,7 +441,30 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[0].x, (int)points[0].y, color);
 }
 
+Vector3 Perpendicular(const Vector3& vector) {
+	if (vector.x != 0.0f || vector.y != 0.0f) {
+		return{ -vector.y,vector.x,0.0f };
+	}
+	return { 0.0f,-vector.z,vector.y };
+}
 
+// 三角形描画
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+	Vector3 points[3];
+	for (int32_t index = 0; index < 3; index++) {
+		points[index] = Transform(Transform(triangle.vertices[index], viewProjectionMatrix), viewportMatrix);
+	}
+
+	Novice::DrawLine((int)points[0].x, (int)points[0].y, (int)points[1].x, (int)points[1].y, color);
+	Novice::DrawLine((int)points[1].x, (int)points[1].y, (int)points[2].x, (int)points[2].y, color);
+	Novice::DrawLine((int)points[2].x, (int)points[2].y, (int)points[0].x, (int)points[0].y, color);
+}
+
+
+/// -^-^- 衝突判定 -^-^- ///
+
+// 衝突判定：線分と平面
 bool IsCollision(const Segment& segment, const Plane& plane) {
 	// まずは垂直判定を行うために、法線と線の内積を求める
 	float dot = Dot(plane.normal, segment.diff);
@@ -480,6 +486,7 @@ bool IsCollision(const Segment& segment, const Plane& plane) {
 	return true;
 }
 
+// 衝突判定：直線と平面
 bool IsCollision(const Line& line, const Plane& plane) {
 	// まずは垂直判定を行うために、法線と線の内積を求める
 	float dot = Dot(plane.normal, line.diff);
@@ -498,6 +505,7 @@ bool IsCollision(const Line& line, const Plane& plane) {
 	return true;
 }
 
+// 衝突判定：半直線と平面
 bool IsCollision(const Ray& ray, const Plane& plane) {
 	// まずは垂直判定を行うために、法線と線の内積を求める
 	float dot = Dot(plane.normal, ray.diff);
@@ -514,4 +522,67 @@ bool IsCollision(const Ray& ray, const Plane& plane) {
 		return false;
 	}
 	return true;
+}
+
+// 衝突判定：三角形と線
+bool IsCollision(const Triangle& triangle, const Segment& segment) {
+	// 三角形の頂点から平面を求める
+	Plane plane;
+	Vector3 v1, v2;
+	v1 = Subtract(triangle.vertices[1], triangle.vertices[0]);
+	v2 = Subtract(triangle.vertices[2], triangle.vertices[1]);
+
+	plane.normal = Normalize(Cross(v1, v2));
+	plane.distance = Dot(triangle.vertices[0], plane.normal);
+
+	// 線と平面が当たっているか
+	if (IsCollision(segment, plane) == true) {
+
+		float dot = Dot(plane.normal, segment.diff);
+		// 垂直=平行であるので、衝突しているはずがない
+		if (dot == 0.0f) {
+			return false;
+		}
+		// tを求める
+		float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+
+		Vector3 point = Multiply(t, segment.diff);
+		point = Add(point, segment.origin);
+
+		Vector3 cross01 = Cross(Subtract(triangle.vertices[1], triangle.vertices[0]), Subtract(point, triangle.vertices[1]));
+		Vector3 cross12 = Cross(Subtract(triangle.vertices[2], triangle.vertices[1]), Subtract(point, triangle.vertices[2]));
+		Vector3 cross20 = Cross(Subtract(triangle.vertices[0], triangle.vertices[2]), Subtract(point, triangle.vertices[0]));
+
+		if (Dot(cross01, plane.normal) >= 0.0f &&
+			Dot(cross12, plane.normal) >= 0.0f &&
+			Dot(cross20, plane.normal) >= 0.0f) {
+
+			return true;
+		}
+	}
+	return false;
+}
+
+// 衝突判定：球と球
+bool IsCollision(const Sphere& s1, const Sphere& s2) {
+	// 2つの球の中心点間の距離を求める
+	float distance = Length({ s2.center.x - s1.center.x,s2.center.y - s1.center.y,s2.center.z - s1.center.z });
+	// 半径の合計よりも短ければ衝突
+	if (distance <= s1.radius + s2.radius) {
+		return true;
+	}
+	return false;
+}
+
+// 衝突判定：平面と球
+bool IsCollision(const Sphere& sphere, const Plane& plane) {
+
+	float k = Dot(plane.normal, sphere.center) - plane.distance;
+
+	k = k < 0 ? -k : k; // kの絶対値をとる
+
+	if (k <= sphere.radius) {
+		return true;
+	}
+	return false;
 }
