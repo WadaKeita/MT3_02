@@ -1,7 +1,6 @@
 #include <Novice.h>
 #include "Vector3.h"
 #include "Function.h"
-#include <algorithm>
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -10,19 +9,34 @@
 const char kWindowTitle[] = "LD2A_02_ワダ_ケイタ";
 
 
-bool IsCollision(const AABB& aabb, const Sphere& sphere) {
-	// 最近接点を求める
-	Vector3 closestPoint{ std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),
-		std::clamp(sphere.center.y, aabb.min.y, aabb.max.y),
-		std::clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
-	// 最近接点と球の中心との距離を求める
-	float distance = Length(Subtract(closestPoint, sphere.center));
-	// 距離が半径よりも小さければ衝突
-	if(distance <= sphere.radius){
-		return true;
+bool IsCollision(const AABB& aabb, const Segment& segment) {
+
+	float txMin = (aabb.min.x - segment.origin.x) / segment.diff.x;
+	float txMax = (aabb.max.x - segment.origin.x) / segment.diff.x;
+
+	float tyMin = (aabb.min.y - segment.origin.y) / segment.diff.y;
+	float tyMax = (aabb.max.y - segment.origin.y) / segment.diff.y;
+
+	float tzMin = (aabb.min.z - segment.origin.z) / segment.diff.z;
+	float tzMax = (aabb.max.z - segment.origin.z) / segment.diff.z;
+
+	float tNearX = min(txMin, txMax); float tFarX = max(txMin, txMax);
+	float tNearY = min(tyMin, tyMax); float tFarY = max(tyMin, tyMax);
+	float tNearZ = min(tzMin, tzMax); float tFarZ = max(tzMin, tzMax);
+
+	// AABBとの衝突点（貫通点）のtが小さい方
+	float tmin = max(max(tNearX, tNearY), tNearZ);
+	// AABBとの衝突点（貫通点）のtが大きい方
+	float tmax = min(min(tFarX, tFarY), tFarZ);
+
+	if (tmin <= tmax) {
+		if ((tmin >= 0 && tmin <= 1) || (tmax >= 0 && tmax <= 1)) {
+			return true;
+		}
 	}
 	return false;
 }
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -37,17 +51,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
 
-	Sphere sphere;
-	sphere.center = { 1.0f,1.0f,1.0f };
-	sphere.radius = 0.5f;
-
 	AABB aabb1{
 		.min{ -0.5f, -0.5f, -0.5f },
 		.max{ 0.5f, 0.5f, 0.5f },
 	};
 
+	Segment segment{
+		.origin{ -0.7f, 0.3f, 0.0f },
+		.diff{ 2.0f, -0.5f, 0.0f }
+	};
+
 	int aabb1_color = WHITE;
-	int sphere_color = WHITE;
+	int segment_color = WHITE;
 
 	Vector3 scale{ 1.0f,1.0f,1.0f };
 	Vector3 rotate{};
@@ -102,7 +117,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		Matrix4x4 worldMatrix = MakeAffineMatrix(scale, rotate, translate);
-		Matrix4x4 sphere1WorldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, sphere.center);
 
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraScale, cameraRotation, cameraTranslate);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -111,11 +125,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
 
-		Matrix4x4 sphere1WorldViewProjectionMatrix = Multiply(sphere1WorldMatrix, Multiply(viewMatrix, projectionMatrix));
-
 
 		// 当たり判定
-		if (IsCollision(aabb1, sphere) == true) {
+		if (IsCollision(aabb1, segment) == true) {
 			aabb1_color = RED;
 		}
 		else {
@@ -134,7 +146,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(worldViewProjectionMatrix, viewportMatrix);
 
 		DrawAABB(aabb1, worldViewProjectionMatrix, viewportMatrix, aabb1_color);
-		DrawSphere(sphere, sphere1WorldViewProjectionMatrix, viewportMatrix, sphere_color);
+		DrawSegment(segment, worldViewProjectionMatrix, viewportMatrix, segment_color);
 
 #ifdef _DEBUG
 
@@ -150,9 +162,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("Object");
 
-		ImGui::DragFloat3("sphere.center", &sphere.center.x, 0.01f);
-		ImGui::DragFloat("sphere.radius", &sphere.radius, 0.01f);
-
 		ImGui::DragFloat3("aabb1.max", &aabb1.max.x, 0.01f);
 		ImGui::DragFloat3("aabb1.min", &aabb1.min.x, 0.01f);
 		aabb1.min.x = (std::min)(aabb1.min.x, aabb1.max.x);
@@ -161,6 +170,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		aabb1.max.y = (std::max)(aabb1.min.y, aabb1.max.y);
 		aabb1.min.z = (std::min)(aabb1.min.z, aabb1.max.z);
 		aabb1.max.z = (std::max)(aabb1.min.z, aabb1.max.z);
+
+
+		ImGui::DragFloat3("segment.origin", &segment.origin.x, 0.01f);
+		ImGui::DragFloat3("segment.diff", &segment.diff.x, 0.01f);
+
 
 		ImGui::End();
 

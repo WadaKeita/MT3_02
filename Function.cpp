@@ -125,7 +125,12 @@ Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
 // X軸回転行列
 Matrix4x4 MakeRotateXMatrix(float radian) {
 	Matrix4x4 result = {
-		{{1, 0, 0, 0}, {0, std::cos(radian), std::sin(radian), 0}, {0, -std::sin(radian), std::cos(radian), 0}, {0, 0, 0, 1}},
+		{
+			{ 1, 0, 0, 0}, 
+			{ 0, std::cos(radian), std::sin(radian), 0 }, 
+			{ 0, -std::sin(radian), std::cos(radian), 0 },
+			{ 0, 0, 0, 1 }
+		},
 	};
 
 	return result;
@@ -134,7 +139,12 @@ Matrix4x4 MakeRotateXMatrix(float radian) {
 // Y軸回転行列
 Matrix4x4 MakeRotateYMatrix(float radian) {
 	Matrix4x4 result = {
-		{{std::cos(radian), 0, -std::sin(radian), 0}, {0, 1, 0, 0}, {std::sin(radian), 0, std::cos(radian), 0}, {0, 0, 0, 1}},
+		{
+			{ std::cos(radian), 0, -std::sin(radian), 0 },
+			{ 0, 1, 0, 0},
+			{ std::sin(radian), 0, std::cos(radian), 0 },
+			{ 0, 0, 0, 1}
+		},
 	};
 
 	return result;
@@ -143,7 +153,12 @@ Matrix4x4 MakeRotateYMatrix(float radian) {
 // Z軸回転行列
 Matrix4x4 MakeRotateZMatrix(float radian) {
 	Matrix4x4 result = {
-		{{std::cos(radian), std::sin(radian), 0, 0}, {-std::sin(radian), std::cos(radian), 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}},
+		{
+			{std::cos(radian), std::sin(radian), 0, 0},
+			{-std::sin(radian), std::cos(radian), 0, 0},
+			{0, 0, 1, 0},
+			{0, 0, 0, 1}
+		},
 	};
 
 	return result;
@@ -496,6 +511,33 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
 	Novice::DrawLine((int)points[3].x, (int)points[3].y, (int)points[7].x, (int)points[7].y, color);
 }
 
+// 直線描画
+void DrawLine(const Line& line, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+	Vector3 start = Transform(Transform(line.origin, viewProjectionMatrix), viewportMatrix);
+	Vector3 end = Transform(Transform(Add(line.origin, line.diff), viewProjectionMatrix), viewportMatrix);
+
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
+}
+
+// 半直線描画
+void DrawRay(const Ray& ray, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+	Vector3 start = Transform(Transform(ray.origin, viewProjectionMatrix), viewportMatrix);
+	Vector3 end = Transform(Transform(Add(ray.origin, ray.diff), viewProjectionMatrix), viewportMatrix);
+
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
+}
+
+// 線分描画
+void DrawSegment(const Segment& segment, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+
+	Vector3 start = Transform(Transform(segment.origin, viewProjectionMatrix), viewportMatrix);
+	Vector3 end = Transform(Transform(Add(segment.origin, segment.diff), viewProjectionMatrix), viewportMatrix);
+
+	Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), color);
+}
+
 
 /// -^-^- 衝突判定 -^-^- ///
 
@@ -627,6 +669,21 @@ bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
 	if ((aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) &&
 		(aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) &&
 		(aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z)) {
+		return true;
+	}
+	return false;
+}
+
+// 衝突判定：AABBと球
+bool IsCollision(const AABB& aabb, const Sphere& sphere) {
+	// 最近接点を求める
+	Vector3 closestPoint{ std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),
+		std::clamp(sphere.center.y, aabb.min.y, aabb.max.y),
+		std::clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
+	// 最近接点と球の中心との距離を求める
+	float distance = Length(Subtract(closestPoint, sphere.center));
+	// 距離が半径よりも小さければ衝突
+	if (distance <= sphere.radius) {
 		return true;
 	}
 	return false;

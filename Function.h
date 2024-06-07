@@ -4,6 +4,7 @@
 #include "Vector3.h"
 #include "Matrix4x4.h"
 #include "cmath"
+#include <algorithm>
 #include <cassert>
 #include "Novice.h"
 
@@ -159,6 +160,22 @@ void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatri
 void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 /// <summary>
+/// 直線描画
+/// </summary>
+void DrawLine(const Line& line, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+/// <summary>
+/// 半直線描画
+/// </summary>
+void DrawRay(const Ray& ray, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+/// <summary>
+/// 線分描画
+/// </summary>
+void DrawSegment(const Segment& segment, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+
+/// <summary>
 /// 衝突判定：球と球
 /// </summary>
 bool IsCollision(const Sphere& s1, const Sphere& s2);
@@ -192,3 +209,8 @@ bool IsCollision(const Triangle& triangle, const Segment& segment);
 /// 衝突判定：AABBとAABB
 /// </summary>
 bool IsCollision(const AABB& aabb1, const AABB& aabb2);
+
+/// <summary>
+/// 衝突判定：AABBと球
+/// </summary>
+bool IsCollision(const AABB& aabb, const Sphere& sphere);
