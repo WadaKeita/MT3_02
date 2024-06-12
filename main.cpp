@@ -30,7 +30,7 @@ bool IsCollision(const AABB& aabb, const Segment& segment) {
 	float tmax = min(min(tFarX, tFarY), tFarZ);
 
 	if (tmin <= tmax) {
-		if ((tmin >= 0 && tmin <= 1) || (tmax >= 0 && tmax <= 1)) {
+		if ((tmin >= 0 && tmin <= 1) || (tmax >= 0 && tmax <= 1) || (tmin < 0 && tmax >1)) {
 			return true;
 		}
 	}
